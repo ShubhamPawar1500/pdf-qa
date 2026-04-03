@@ -14,12 +14,16 @@ from langchain_core.runnables.config import RunnableConfig
 import chainlit as cl
 from chainlit.types import AskFileResponse
 from datetime import datetime, UTC
-from typing import Any
+from typing import Any, cast
+
+# You are a helpful agent that can search the document for information.
+# Use ONLY the provided context to answer the question.
+# If the answer is not in the document, say you don't know.
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100, add_start_index=True)
-embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-2-preview")
+# embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-2-preview")
+embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
-vector_store = InMemoryVectorStore(embeddings)
 
 memory = InMemorySaver()
 
@@ -31,8 +35,15 @@ welcome_message = """To get started:
 @tool
 def search_document(query: str) -> str:
     """Search the document for information"""
-    results = vector_store.similarity_search(query)
-    return results[0].page_content
+    vector_store = cast(InMemoryVectorStore, cl.user_session.get("vector_store"))
+
+    results = vector_store.similarity_search(query, k = 3)
+
+    # return results[0].page_content
+    return "\n\n".join([
+        f"[Source {i}] {doc.page_content}"
+        for i, doc in enumerate(results)
+    ])
 
 tools = [search_document]
 
@@ -45,7 +56,10 @@ def process_file(file: AskFileResponse):
     data = loader.load()
     all_splits = text_splitter.split_documents(data)
 
+    vector_store = InMemoryVectorStore(embeddings)
     vector_store.add_documents(documents=all_splits)
+
+    cl.user_session.set("vector_store", vector_store)    
 
     print("done with processing document")
 
@@ -92,9 +106,13 @@ async def start():
         ],
         system_prompt="""
 
-        You are a helpful agent that can search the document for information.
-        Use ONLY the provided context to answer the question.
-        If the answer is not in the document, say you don't know.
+        You are a document QA assistant.
+
+        STRICT RULES:
+        - Answer ONLY from retrieved context
+        - If answer is not clearly present, say "I cannot found the relevant source in document."
+        - Do NOT infer or guess
+        - Quote relevant parts when possible
         
         System time: {system_time}
         """.format(
@@ -135,6 +153,7 @@ async def main(message: cl.Message):
                 tool_name = msg.tool_calls[0]["name"]
                 answer.content += f"\n\n{tool_name}\n"
     except Exception as e:
+        print(e)
         await cl.Message(
             content="something went wrong!!"
         ).send()
