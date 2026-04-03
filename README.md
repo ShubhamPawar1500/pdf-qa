@@ -45,7 +45,8 @@ Built using **LangChain, Chainlit, and Groq LLM**, this project demonstrates a r
 
 ## 📸 Demo
 
-<video src="./public/PDF%20-%20QA.mp4" controls width="600"></video>
+<video src="./public/rag-demo.mp4" controls width="600"></video>
+
 
 ---
 
