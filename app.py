@@ -81,7 +81,7 @@ async def start():
         files = await cl.AskFileMessage(
             content=welcome_message,
             accept=["text/plain", "application/pdf"],
-            max_size_mb=10,
+            max_size_mb=8,
             timeout=180,
         ).send()
 
