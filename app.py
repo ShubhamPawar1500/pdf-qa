@@ -15,6 +15,9 @@ import chainlit as cl
 from chainlit.types import AskFileResponse
 from datetime import datetime, UTC
 from typing import Any, cast
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # You are a helpful agent that can search the document for information.
 # Use ONLY the provided context to answer the question.
