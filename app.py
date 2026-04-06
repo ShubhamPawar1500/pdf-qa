@@ -16,6 +16,9 @@ from chainlit.types import AskFileResponse
 from datetime import datetime, UTC
 from typing import Any, cast
 from dotenv import load_dotenv
+import os
+
+os.environ["ANYIO_BACKEND"] = "asyncio"
 
 load_dotenv()
 
